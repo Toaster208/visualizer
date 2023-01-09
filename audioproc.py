@@ -1,43 +1,58 @@
 import numpy as np
 import pyaudio
+import serial
 
 # Set the parameters for the audio input
-CHUNK_SIZE = 1024
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
+chunkSize = 1024
+format = pyaudio.paInt16
+channels = 1
+rate = 44100
 
 # Set the number of frequency bands
-N_BANDS = 10
+nBands = 10
+
+# Set the parameters for the serial connection to the Arduino
+arduinoPort = '/dev/ttyACM0'  # Replace this with the correct port for your Arduino
+arduinoBaudRate = 9600
 
 # Initialize PyAudio
 p = pyaudio.PyAudio()
 
 # Open a stream for the audio input
 stream = p.open(
-    format=FORMAT,
-    channels=CHANNELS,
-    rate=RATE,
+    format=format,
+    channels=channels,
+    rate=rate,
     input=True,
-    frames_per_buffer=CHUNK_SIZE
+    frames_per_buffer=chunkSize
 )
+
+# Open a serial connection to the Arduino
+ser = serial.Serial(arduinoPort, arduinoBaudRate)
 
 # Continuously read and process audio data
 while True:
     # Read a chunk of audio data from the input stream
-    data = stream.read(CHUNK_SIZE)
+    data = stream.read(chunkSize)
     
     # Convert the audio data to a NumPy array
-    audio_data = np.frombuffer(data, dtype=np.int16)
+    audioData = np.frombuffer(data, dtype=np.int16)
     
     # Split the audio data into frequency bands
-    bands = np.array_split(audio_data, N_BANDS)
+    bands = np.array_split(audioData, nBands)
     
     # Calculate the magnitude of each frequency band
     magnitudes = [np.abs(band).mean() for band in bands]
     
-    # Print the magnitudes in a neat fashion
-    print("Magnitudes:", ["{:.2f}".format(m) for m in magnitudes])
+    # Send "start" to the Arduino
+    ser.write("start\n".encode())
+    
+    # Send the magnitudes to the Arduino, one per line
+    for m in magnitudes:
+        ser.write("{}\n".format(m).encode())
+
+# Close the serial connection to the Arduino
+ser.close()
 
 # Close the audio stream
 stream.stop_stream()
