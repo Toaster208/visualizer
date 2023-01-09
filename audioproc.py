@@ -4,31 +4,26 @@ import serial
 
 # Set the parameters for the audio input
 chunkSize = 1024
-format = pyaudio.paInt16
+audioFormat = pyaudio.paInt16
 channels = 1
 rate = 44100
 
 # Set the number of frequency bands
 nBands = 10
 
-# Set the parameters for the serial connection to the Arduino
-arduinoPort = '/dev/ttyACM0'  # Replace this with the correct port for your Arduino
-arduinoBaudRate = 9600
-
 # Initialize PyAudio
 p = pyaudio.PyAudio()
 
+arduino = serial.Serial("COM3", 9600)
+
 # Open a stream for the audio input
 stream = p.open(
-    format=format,
+    format=audioFormat,
     channels=channels,
     rate=rate,
     input=True,
     frames_per_buffer=chunkSize
 )
-
-# Open a serial connection to the Arduino
-ser = serial.Serial(arduinoPort, arduinoBaudRate)
 
 # Continuously read and process audio data
 while True:
@@ -45,19 +40,21 @@ while True:
     # Calculate the magnitude of each frequency band
     magnitudes = [np.abs(band).mean() for band in bands]
     
-    # Send "start" to the Arduino
-    ser.write("start\n".encode())
-    
-    # Send the magnitudes to the Arduino, one per line
+    # Determine the strength of each frequency band
+    # strengths = [int(m / (1800 / 6)) for m in magnitudes]
+    strengths = []
     for m in magnitudes:
-        ser.write("{}\n".format(m).encode())
+      if int(m / (1800 / 5 )) > 8:
+        strengths.append(8)
+      else:
+        strengths.append(int(m / (1800 / 5 )))
+     
+    # Print the strengths in a neat list
+    # print("Strengths:", ["{}".format(s) for s in strengths])
+    arduino.write(bytes(strengths))
+    print(bytes(strengths))
   except KeyboardInterrupt:
-    print('Keyboard Interrupt received. Shutting down processes.')
     break
-    
-
-# Close the serial connection to the Arduino
-ser.close()
 
 # Close the audio stream
 stream.stop_stream()
