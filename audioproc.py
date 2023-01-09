@@ -32,6 +32,7 @@ ser = serial.Serial(arduinoPort, arduinoBaudRate)
 
 # Continuously read and process audio data
 while True:
+  try:
     # Read a chunk of audio data from the input stream
     data = stream.read(chunkSize)
     
@@ -50,6 +51,10 @@ while True:
     # Send the magnitudes to the Arduino, one per line
     for m in magnitudes:
         ser.write("{}\n".format(m).encode())
+  except KeyboardInterrupt:
+    print('Keyboard Interrupt received. Shutting down processes.')
+    break
+    
 
 # Close the serial connection to the Arduino
 ser.close()
