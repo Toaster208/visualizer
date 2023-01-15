@@ -1,6 +1,7 @@
 import numpy as np
 import pyaudio
 import serial
+from time import *
 
 # Set the parameters for the audio input
 chunkSize = 1024
@@ -44,21 +45,29 @@ while True:
     # strengths = [int(m / (1800 / 6)) for m in magnitudes]
     strengths = []
     for m in magnitudes:
-      if int(m / (1800 / 5 )) > 8:
+      if int(m / (1800 / 15 )) > 8:
         strengths.append(8)
       else:
-        strengths.append(int(m / (1800 / 5 )))
+        strengths.append(int(m / (1800 / 15 )))
      
     # Print the strengths in a neat list
-    # print("Strengths:", ["{}".format(s) for s in strengths])
-    arduino.write(bytes(strengths))
-    print(bytes(strengths))
+    strengthString = ""
+    for s in strengths:
+      strengthString += str(s) + ""
+    
+    print(bytes(strengthString, encoding='utf8'))
+    # arduino.write(strengthString[:-1])
+    # print(strengths)
+    arduino.write(bytes(strengthString, encoding='utf8'))
+    sleep(0.02)
   except KeyboardInterrupt:
     break
 
 # Close the audio stream
 stream.stop_stream()
 stream.close()
+
+arduino.close()
 
 # Terminate PyAudio
 p.terminate()
