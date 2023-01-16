@@ -59,7 +59,7 @@ while True:
     # arduino.write(strengthString[:-1])
     # print(strengths)
     arduino.write(bytes(strengthString, encoding='utf8'))
-    sleep(0.02)
+    sleep(0.03)
   except KeyboardInterrupt:
     break
 
